@@ -1,164 +1,102 @@
-name: Build LEDE PVE X86_64 PassWall
+name: Build LEDE PVE X86
 
 on:
   workflow_dispatch:
-
-env:
-  TZ: Asia/Shanghai
 
 jobs:
   build:
     runs-on: ubuntu-22.04
 
     steps:
-
-    - name: Checkout
-      uses: actions/checkout@main
-
-
-    - name: Install dependencies
-      run: |
-        sudo apt update
-        sudo apt install -y \
-          build-essential \
-          clang \
-          flex \
-          bison \
-          g++ \
-          gawk \
-          gcc-multilib \
-          gettext \
-          git \
-          libncurses-dev \
-          libssl-dev \
-          python3 \
-          python3-setuptools \
-          rsync \
-          unzip \
-          zlib1g-dev \
-          wget
+      - name: Checkout
+        uses: actions/checkout@v4
 
 
-    - name: Clone LEDE
-      run: |
-        git clone https://github.com/coolsnowwolf/lede.git openwrt
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            build-essential \
+            clang \
+            flex \
+            bison \
+            g++ \
+            gawk \
+            gettext \
+            git \
+            libncurses-dev \
+            libssl-dev \
+            python3 \
+            python3-setuptools \
+            rsync \
+            unzip \
+            zlib1g-dev
 
 
-    - name: Add PassWall feeds
-      run: |
-        cd openwrt
-
-        echo "src-git passwall_packages https://github.com/Openwrt-Passwall/openwrt-passwall-packages.git;main" >> feeds.conf.default
-
-        echo "src-git passwall_luci https://github.com/Openwrt-Passwall/openwrt-passwall.git;main" >> feeds.conf.default
+      - name: Clone LEDE
+        run: |
+          git clone https://github.com/coolsnowwolf/lede.git openwrt
 
 
-    - name: Update feeds
-      run: |
-        cd openwrt
+      - name: Add PassWall
+        run: |
+          cd openwrt
 
-        ./scripts/feeds update -a
+          echo "src-git passwall_packages https://github.com/Openwrt-Passwall/openwrt-passwall-packages.git;main" >> feeds.conf.default
 
-        ./scripts/feeds install -a
+          echo "src-git passwall_luci https://github.com/Openwrt-Passwall/openwrt-passwall.git;main" >> feeds.conf.default
 
 
-    - name: Configure
-      run: |
-        cd openwrt
+      - name: Update feeds
+        run: |
+          cd openwrt
 
-        make defconfig
+          ./scripts/feeds update -a
 
-        cat >> .config <<EOF
+          ./scripts/feeds install -a
+
+
+      - name: Configure
+        run: |
+          cd openwrt
+
+          make defconfig
+
+          cat >> .config <<EOF
 
 CONFIG_TARGET_x86=y
 CONFIG_TARGET_x86_64=y
 CONFIG_TARGET_x86_64_DEVICE_generic=y
 
-CONFIG_TARGET_IMAGES_GZIP=y
+CONFIG_PACKAGE_luci=y
+CONFIG_PACKAGE_luci-app-passwall=y
 
+CONFIG_PACKAGE_dnsmasq-full=y
+CONFIG_PACKAGE_smartdns=y
 
 CONFIG_PACKAGE_kmod-virtio=y
 CONFIG_PACKAGE_kmod-virtio-net=y
-CONFIG_PACKAGE_kmod-virtio-pci=y
 CONFIG_PACKAGE_kmod-virtio-scsi=y
 
-
-CONFIG_PACKAGE_luci=y
-CONFIG_PACKAGE_luci-compat=y
-
-
-CONFIG_PACKAGE_luci-app-passwall=y
-
-
-CONFIG_PACKAGE_dnsmasq-full=y
-
-CONFIG_PACKAGE_smartdns=y
-
-CONFIG_PACKAGE_luci-app-smartdns=y
-
-
-CONFIG_PACKAGE_adguardhome=y
-
-CONFIG_PACKAGE_luci-app-adguardhome=y
-
-
-CONFIG_PACKAGE_ipset=y
-
 CONFIG_PACKAGE_kmod-tun=y
-
 CONFIG_PACKAGE_iptables-mod-tproxy=y
 
-
-CONFIG_PACKAGE_dockerd=y
-
-CONFIG_PACKAGE_docker-compose=y
-
-CONFIG_PACKAGE_luci-app-dockerman=y
-
-
-CONFIG_PACKAGE_block-mount=y
-
-CONFIG_PACKAGE_kmod-fs-ext4=y
-
-
-CONFIG_PACKAGE_htop=y
-
-CONFIG_PACKAGE_curl=y
-
-CONFIG_PACKAGE_wget=y
-
-CONFIG_PACKAGE_tcpdump=y
-
-CONFIG_PACKAGE_iperf3=y
-
-CONFIG_PACKAGE_nano=y
-
-
 CONFIG_PACKAGE_ca-bundle=y
-
 CONFIG_PACKAGE_ca-certificates=y
 
 EOF
 
-        make defconfig
+          make defconfig
 
 
-    - name: Download packages
-      run: |
-        cd openwrt
-
-        make download -j8
-
-
-    - name: Compile
-      run: |
-        cd openwrt
-
-        make -j$(nproc) V=s
+      - name: Compile
+        run: |
+          cd openwrt
+          make -j$(nproc) V=s
 
 
-    - name: Upload firmware
-      uses: actions/upload-artifact@main
-      with:
-        name: LEDE-PVE-X86-PassWall
-        path: openwrt/bin/targets/x86/64/*
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: LEDE-PVE-X86
+          path: openwrt/bin/targets/x86/64/*
