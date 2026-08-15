@@ -48,9 +48,9 @@ jobs:
       run: |
         cd openwrt
 
-        sed -i '1i src-git passwall_packages https://github.com/Openwrt-Passwall/openwrt-passwall-packages.git;main' feeds.conf.default
+        echo "src-git passwall_packages https://github.com/Openwrt-Passwall/openwrt-passwall-packages.git;main" >> feeds.conf.default
 
-        sed -i '2i src-git passwall_luci https://github.com/Openwrt-Passwall/openwrt-passwall.git;main' feeds.conf.default
+        echo "src-git passwall_luci https://github.com/Openwrt-Passwall/openwrt-passwall.git;main" >> feeds.conf.default
 
 
     - name: Update feeds
@@ -62,86 +62,83 @@ jobs:
         ./scripts/feeds install -a
 
 
-    - name: Configure X86 PVE
+    - name: Configure
       run: |
         cd openwrt
 
         make defconfig
 
-        ./scripts/config set CONFIG_TARGET_x86=y
-        ./scripts/config set CONFIG_TARGET_x86_64=y
-        ./scripts/config set CONFIG_TARGET_x86_64_DEVICE_generic=y
+        cat >> .config <<EOF
 
-        make defconfig
+CONFIG_TARGET_x86=y
+CONFIG_TARGET_x86_64=y
+CONFIG_TARGET_x86_64_DEVICE_generic=y
 
-
-        # VirtIO for PVE
-
-        ./scripts/config set CONFIG_PACKAGE_kmod-virtio=y
-        ./scripts/config set CONFIG_PACKAGE_kmod-virtio-net=y
-        ./scripts/config set CONFIG_PACKAGE_kmod-virtio-pci=y
-        ./scripts/config set CONFIG_PACKAGE_kmod-virtio-scsi=y
+CONFIG_TARGET_IMAGES_GZIP=y
 
 
-        # LuCI
-
-        ./scripts/config set CONFIG_PACKAGE_luci=y
-        ./scripts/config set CONFIG_PACKAGE_luci-compat=y
-
-
-        # PassWall
-
-        ./scripts/config set CONFIG_PACKAGE_luci-app-passwall=y
+CONFIG_PACKAGE_kmod-virtio=y
+CONFIG_PACKAGE_kmod-virtio-net=y
+CONFIG_PACKAGE_kmod-virtio-pci=y
+CONFIG_PACKAGE_kmod-virtio-scsi=y
 
 
-        # DNS
-
-        ./scripts/config set CONFIG_PACKAGE_dnsmasq-full=y
-        ./scripts/config set CONFIG_PACKAGE_smartdns=y
-        ./scripts/config set CONFIG_PACKAGE_luci-app-smartdns=y
+CONFIG_PACKAGE_luci=y
+CONFIG_PACKAGE_luci-compat=y
 
 
-        # AdGuardHome
-
-        ./scripts/config set CONFIG_PACKAGE_adguardhome=y
-        ./scripts/config set CONFIG_PACKAGE_luci-app-adguardhome=y
+CONFIG_PACKAGE_luci-app-passwall=y
 
 
-        # Firewall proxy
+CONFIG_PACKAGE_dnsmasq-full=y
 
-        ./scripts/config set CONFIG_PACKAGE_ipset=y
-        ./scripts/config set CONFIG_PACKAGE_kmod-tun=y
-        ./scripts/config set CONFIG_PACKAGE_iptables-mod-tproxy=y
+CONFIG_PACKAGE_smartdns=y
 
-
-        # Docker
-
-        ./scripts/config set CONFIG_PACKAGE_dockerd=y
-        ./scripts/config set CONFIG_PACKAGE_docker-compose=y
-        ./scripts/config set CONFIG_PACKAGE_luci-app-dockerman=y
+CONFIG_PACKAGE_luci-app-smartdns=y
 
 
-        # Storage
+CONFIG_PACKAGE_adguardhome=y
 
-        ./scripts/config set CONFIG_PACKAGE_block-mount=y
-        ./scripts/config set CONFIG_PACKAGE_kmod-fs-ext4=y
-
-
-        # Tools
-
-        ./scripts/config set CONFIG_PACKAGE_htop=y
-        ./scripts/config set CONFIG_PACKAGE_curl=y
-        ./scripts/config set CONFIG_PACKAGE_wget=y
-        ./scripts/config set CONFIG_PACKAGE_tcpdump=y
-        ./scripts/config set CONFIG_PACKAGE_iperf3=y
-        ./scripts/config set CONFIG_PACKAGE_nano=y
+CONFIG_PACKAGE_luci-app-adguardhome=y
 
 
-        # SSL
+CONFIG_PACKAGE_ipset=y
 
-        ./scripts/config set CONFIG_PACKAGE_ca-bundle=y
-        ./scripts/config set CONFIG_PACKAGE_ca-certificates=y
+CONFIG_PACKAGE_kmod-tun=y
 
+CONFIG_PACKAGE_iptables-mod-tproxy=y
+
+
+CONFIG_PACKAGE_dockerd=y
+
+CONFIG_PACKAGE_docker-compose=y
+
+CONFIG_PACKAGE_luci-app-dockerman=y
+
+
+CONFIG_PACKAGE_block-mount=y
+
+CONFIG_PACKAGE_kmod-fs-ext4=y
+
+
+CONFIG_PACKAGE_htop=y
+
+CONFIG_PACKAGE_curl=y
+
+CONFIG_PACKAGE_wget=y
+
+CONFIG_PACKAGE_tcpdump=y
+
+CONFIG_PACKAGE_iperf3=y
+
+CONFIG_PACKAGE_nano=y
+
+
+CONFIG_PACKAGE_ca-bundle=y
+
+CONFIG_PACKAGE_ca-certificates=y
+
+EOF
 
         make defconfig
 
@@ -153,7 +150,7 @@ jobs:
         make download -j8
 
 
-    - name: Compile firmware
+    - name: Compile
       run: |
         cd openwrt
 
