@@ -1,18 +1,22 @@
-name: Build LEDE PVE X86
+name: Build LEDE PVE X86_64
 
-on:
+"on":
   workflow_dispatch:
+
 
 jobs:
   build:
+
     runs-on: ubuntu-22.04
 
+
     steps:
+
       - name: Checkout
         uses: actions/checkout@v4
 
 
-      - name: Install dependencies
+      - name: Install build tools
         run: |
           sudo apt update
           sudo apt install -y \
@@ -33,12 +37,12 @@ jobs:
             zlib1g-dev
 
 
-      - name: Clone LEDE
+      - name: Download LEDE source
         run: |
           git clone https://github.com/coolsnowwolf/lede.git openwrt
 
 
-      - name: Add PassWall
+      - name: Add PassWall feeds
         run: |
           cd openwrt
 
@@ -47,7 +51,7 @@ jobs:
           echo "src-git passwall_luci https://github.com/Openwrt-Passwall/openwrt-passwall.git;main" >> feeds.conf.default
 
 
-      - name: Update feeds
+      - name: Install feeds
         run: |
           cd openwrt
 
@@ -56,47 +60,54 @@ jobs:
           ./scripts/feeds install -a
 
 
-      - name: Configure
+      - name: Prepare config
         run: |
           cd openwrt
 
           make defconfig
 
-          cat >> .config <<EOF
+          printf '%s\n' \
+          'CONFIG_TARGET_x86=y' \
+          'CONFIG_TARGET_x86_64=y' \
+          'CONFIG_TARGET_x86_64_DEVICE_generic=y' \
+          'CONFIG_TARGET_IMAGES_GZIP=y' \
+          'CONFIG_PACKAGE_luci=y' \
+          'CONFIG_PACKAGE_luci-compat=y' \
+          'CONFIG_PACKAGE_luci-app-passwall=y' \
+          'CONFIG_PACKAGE_dnsmasq-full=y' \
+          'CONFIG_PACKAGE_smartdns=y' \
+          'CONFIG_PACKAGE_luci-app-smartdns=y' \
+          'CONFIG_PACKAGE_kmod-virtio=y' \
+          'CONFIG_PACKAGE_kmod-virtio-net=y' \
+          'CONFIG_PACKAGE_kmod-virtio-pci=y' \
+          'CONFIG_PACKAGE_kmod-virtio-scsi=y' \
+          'CONFIG_PACKAGE_kmod-tun=y' \
+          'CONFIG_PACKAGE_iptables-mod-tproxy=y' \
+          'CONFIG_PACKAGE_ca-bundle=y' \
+          'CONFIG_PACKAGE_ca-certificates=y' \
+          >> .config
 
-CONFIG_TARGET_x86=y
-CONFIG_TARGET_x86_64=y
-CONFIG_TARGET_x86_64_DEVICE_generic=y
-
-CONFIG_PACKAGE_luci=y
-CONFIG_PACKAGE_luci-app-passwall=y
-
-CONFIG_PACKAGE_dnsmasq-full=y
-CONFIG_PACKAGE_smartdns=y
-
-CONFIG_PACKAGE_kmod-virtio=y
-CONFIG_PACKAGE_kmod-virtio-net=y
-CONFIG_PACKAGE_kmod-virtio-scsi=y
-
-CONFIG_PACKAGE_kmod-tun=y
-CONFIG_PACKAGE_iptables-mod-tproxy=y
-
-CONFIG_PACKAGE_ca-bundle=y
-CONFIG_PACKAGE_ca-certificates=y
-
-EOF
 
           make defconfig
 
 
-      - name: Compile
+      - name: Download packages
         run: |
           cd openwrt
+
+          make download -j8
+
+
+      - name: Build firmware
+        run: |
+          cd openwrt
+
           make -j$(nproc) V=s
 
 
       - name: Upload firmware
         uses: actions/upload-artifact@v4
+
         with:
-          name: LEDE-PVE-X86
+          name: LEDE-PVE-X86_64
           path: openwrt/bin/targets/x86/64/*
