@@ -66,13 +66,13 @@ jobs:
       run: |
         cd openwrt
 
-        make x86/64_defconfig
+        make defconfig
 
         ./scripts/config set CONFIG_TARGET_x86=y
         ./scripts/config set CONFIG_TARGET_x86_64=y
         ./scripts/config set CONFIG_TARGET_x86_64_DEVICE_generic=y
 
-        ./scripts/config set CONFIG_TARGET_IMAGES_GZIP=y
+        make defconfig
 
 
         # VirtIO for PVE
